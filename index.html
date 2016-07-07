@@ -1,0 +1,60 @@
+<html>
+    <head>
+        <script src="/carnival/thirdparty/wglu-program.js"></script>
+        <script src="/carnival/thirdparty/gl-matrix-min.js"></script>
+        
+        <script src="/carnival/lib/fc_util.js"></script>
+        <script src="/carnival/lib/fc_primitives.js"></script>
+        <script src="/carnival/lib/fc_basicshapes.js"></script>
+        <script src="/carnival/lib/fc_scene.js"></script>
+        <script src="/carnival/lib/fc_feedtools.js"></script>
+        <script src="scene.js"></script>
+        
+    </head>
+    <body>
+            
+        <div id="error-container" style="display: none;">
+            <p>Seems like something went wrong.</p>
+            <p id="error-detail">...</p>
+        </div>
+        <div id="canvas-container">
+            <canvas id="webgl-canvas" style="height: 30%;"></canvas>
+        </div>
+        <div id="controls-container">
+            <div id="readouts-container">
+                <input type="text" id="readoutA"><br>
+                <input type="text" id="readoutB"><br>
+                <input type="text" id="readoutC"><br>
+                <input type="text" id="readoutD"><br>
+                <input type="text" id="readoutE"><br>
+            </div>
+        </div>
+        
+        <script>
+        window.vrScene = new ExperimentalScene();
+        
+        window.showError = function (errorMessage) {
+            document.getElementById('error-container').style.display = 'block';
+            var detailP = document.getElementById('error-detail');
+            if (errorMessage) {
+                detailP.innerHTML = '\<strong>Error detail:\</strong> ' + errorMessage;
+            }
+            else {
+                detailP.innerText = '';
+            }
+            
+        };
+        
+
+        window.updateReadout = function (readoutIdent, newValue) {
+            var readoutElem = document.getElementById('readout' + readoutIdent);
+            readoutElem.value = newValue;
+        }
+
+        
+        </script>
+        <script src="/carnival/lib/fc_engine.js"></script>
+        
+    </body>
+        
+</html>
