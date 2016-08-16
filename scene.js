@@ -14,7 +14,7 @@ window.ExperimentalScene = (function () {
         return new Promise(function (resolve, reject) {
 
             var textures = [
-                {src: '../assets/concrete01.jpg', label: 'concrete01'}
+                {src: '//assets.meta4vr.net/texture/concrete01.jpg', label: 'concrete01'}
             ];
             
             var texColors = [
@@ -45,12 +45,12 @@ window.ExperimentalScene = (function () {
             ]
         
             var models = [
-                {src: '../assets/controlleresque.stl', label: 'controlleresque'}
+                {src: '//assets.meta4vr.net/mesh/stl/controlleresque.stl', label: 'controlleresque'}
             ];
         
             var shaders = [
-                {srcFs: '../assets/basic.fs', srcVs: '../assets/basic.vs', label: 'basic'},
-                {srcFs: '../assets/diffuse2.fs', srcVs: '../assets/diffuse2.vs', label: 'diffuse'}
+                {srcFs: '//assets.meta4vr.net/shader/basic.fs', srcVs: '//assets.meta4vr.net/shader/basic.vs', label: 'basic'},
+                {srcFs: '//assets.meta4vr.net/shader/diffuse2.fs', srcVs: '//assets.meta4vr.net/shader/assets/diffuse2.vs', label: 'diffuse'}
             ];
         
             for (var i=0; i<textures.length; i++) {
