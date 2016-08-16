@@ -50,7 +50,7 @@ window.ExperimentalScene = (function () {
         
             var shaders = [
                 {srcFs: '//assets.meta4vr.net/shader/basic.fs', srcVs: '//assets.meta4vr.net/shader/basic.vs', label: 'basic'},
-                {srcFs: '//assets.meta4vr.net/shader/diffuse2.fs', srcVs: '//assets.meta4vr.net/shader/assets/diffuse2.vs', label: 'diffuse'}
+                {srcFs: '//assets.meta4vr.net/shader/diffuse2.fs', srcVs: '//assets.meta4vr.net/shader/diffuse2.vs', label: 'diffuse'}
             ];
         
             for (var i=0; i<textures.length; i++) {
