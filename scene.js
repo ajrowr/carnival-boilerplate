@@ -4,6 +4,7 @@ window.ExperimentalScene = (function () {
     function Scene() {
         /* Declare any class and instance vars unique to this scene, here. */
         FCScene.call(this);
+        this.meshes = {};
     }
     
     Scene.prototype = Object.create(FCScene.prototype);
@@ -13,10 +14,16 @@ window.ExperimentalScene = (function () {
         var prereqPromises = [];
         return new Promise(function (resolve, reject) {
 
+            /* Load textures */
             var textures = [
                 {src: '//assets.meta4vr.net/texture/concrete01.jpg', label: 'concrete01'}
             ];
+            for (var i=0; i<textures.length; i++) {
+                var myTex = textures[i];
+                prereqPromises.push(scene.addTextureFromImage(myTex.src, myTex.label));
+            }
             
+            /* Build solid colour textures */
             var texColors = [
                 {hex: '#000000', label: 'black'},
                 {hex: '#00007f', label: 'navy'},
@@ -36,33 +43,36 @@ window.ExperimentalScene = (function () {
                 {hex: '#ff00ff', label: 'magenta'},
                 {hex: '#ffa500', label: 'orange'},
                 {hex: '#ffff00', label: 'yellow'},
-                
-                // {hex: '', label: ''},
-                // {hex: '', label: ''},
-                // {hex: '', label: ''},
-                // {hex: '', label: ''},
                 {hex: '#ffffff', label: 'white'}
-            ]
-        
-            var models = [
-                {src: '//assets.meta4vr.net/mesh/stl/controlleresque.stl', label: 'controlleresque'}
             ];
+            for (var i=0; i<texColors.length; i++) {
+                var myTexColor = texColors[i];
+                scene.addTextureFromColor(myTexColor, myTexColor.label);
+            }
+                        
+            /* Load meshes */
+            var meshes = [
+                {src: '//assets.meta4vr.net/mesh/obj/ctrl_lowpoly_body.obj', label: 'controller'}
+            ];
+            for (var i=0; i<meshes.length; i++) {
+                var myMesh = meshes[i];
+                prereqPromises.push(new Promise(function (resolve, reject) {
+                    if (myMesh.src.endsWith('.obj')) {
+                        FCShapeUtils.loadObj(myMesh.src)
+                        .then(function (mesh) {
+                            scene.meshes[myMesh.label] = mesh;
+                            resolve();
+                        })
+                    };
+                    
+                }))
+            }
         
+            /* Load shaders */
             var shaders = [
                 {srcFs: '//assets.meta4vr.net/shader/basic.fs', srcVs: '//assets.meta4vr.net/shader/basic.vs', label: 'basic'},
                 {srcFs: '//assets.meta4vr.net/shader/diffuse2.fs', srcVs: '//assets.meta4vr.net/shader/diffuse2.vs', label: 'diffuse'}
             ];
-        
-            for (var i=0; i<textures.length; i++) {
-                var myTex = textures[i];
-                prereqPromises.push(scene.addTextureFromImage(myTex.src, myTex.label));
-            }
-        
-            for (var i=0; i<models.length; i++) {
-                var myModel = models[i];
-                prereqPromises.push(scene.addModelSource(myModel.src, myModel.label));
-            }
-        
             for (var i=0; i<shaders.length; i++) {
                 var myShader = shaders[i];
                 prereqPromises.push(scene.addShaderFromUrlPair(myShader.srcVs, myShader.srcFs, myShader.label, {
@@ -72,21 +82,15 @@ window.ExperimentalScene = (function () {
                 }));
             }
             
-            for (var i=0; i<texColors.length; i++) {
-                var myTexColor = texColors[i];
-                scene.addTextureFromColor(myTexColor, myTexColor.label);
-            }
-            
+            /* Wait for everything to finish and resolve() */
             Promise.all(prereqPromises).then(function () {
                 resolve();
             });
             
         })
         
-        
-        
-        
     }
+
     
     Scene.prototype.setupScene = function () {
         var scene = this;
@@ -118,16 +122,22 @@ window.ExperimentalScene = (function () {
         
         /* Controllers */
         var ctrlInfo = {
-            src: scene.modelSources.controlleresque,
-            translate: {x:0.00, y:-0.016, z:0.15},
-            size: {scale:0.01},
-            rotate: {x:0/DEG, y:180/DEG, z:90/DEG}, 
+            size: {scale:1},
             greenColor: scene.addTextureFromColor({r:0.2, g:0.9, b:0.6}),
             blueColor: scene.addTextureFromColor({r:0.2, g:0.6, b:0.9})
         };
         
-        var ctrl0 = new FCShapes.LoaderShape(
-            ctrlInfo.src,
+        var buttonHandler = function (gamepadIdx, btnIdx, btnStatus, sector, myButton, extra) {
+            if (btnStatus != 'up') {
+                console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus);
+                if (btnIdx == 0) {
+                    console.log('Sector', sector);
+                }
+            }
+        };
+        
+        var ctrl0 = new FCShapes.MeshShape(
+            scene.meshes.controller,
             _hidden_beneath_floor, /* Hide it under the floor. This position will be overridden */
             ctrlInfo.size,
             null,
@@ -137,13 +147,11 @@ window.ExperimentalScene = (function () {
                 groupLabel: 'controllerTrackers'
             }
         );
-        ctrl0.translation = ctrlInfo.translate;
-        ctrl0.rotation = ctrlInfo.rotate;
-        ctrl0.behaviours.push(FCUtil.makeGamepadTracker(scene, 0, null));
+        ctrl0.behaviours.push(FCUtil.makeGamepadTracker(scene, 0, buttonHandler));
         scene.addObject(ctrl0);
         
-        var ctrl1 = new FCShapes.LoaderShape(
-            ctrlInfo.src,
+        var ctrl1 = new FCShapes.MeshShape(
+            scene.meshes.controller,
             _hidden_beneath_floor, /* Hide it under the floor. This position will be overridden */
             ctrlInfo.size,
             null,
@@ -153,9 +161,7 @@ window.ExperimentalScene = (function () {
                 groupLabel: 'controllerTrackers'
             }
         );
-        ctrl1.translation = ctrlInfo.translate;
-        ctrl1.rotation = ctrlInfo.rotate;
-        ctrl1.behaviours.push(FCUtil.makeGamepadTracker(scene, 1, null));
+        ctrl1.behaviours.push(FCUtil.makeGamepadTracker(scene, 1, buttonHandler));
         scene.addObject(ctrl1);
         
     }
