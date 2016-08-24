@@ -25,7 +25,6 @@ window.ExperimentalScene = (function () {
             
             /* Build solid colour textures */
             var texColors = [
-                {hex: '#000000', label: 'black'},
                 {hex: '#00007f', label: 'navy'},
                 {hex: '#0000ff', label: 'blue'},
                 {hex: '#007f00', label: 'green'},
@@ -43,6 +42,8 @@ window.ExperimentalScene = (function () {
                 {hex: '#ff00ff', label: 'magenta'},
                 {hex: '#ffa500', label: 'orange'},
                 {hex: '#ffff00', label: 'yellow'},
+                {hex: '#000000', label: 'black'},
+                {hex: '#888888', label: 'gray'},
                 {hex: '#ffffff', label: 'white'}
             ];
             for (var i=0; i<texColors.length; i++) {
@@ -90,7 +91,11 @@ window.ExperimentalScene = (function () {
         })
         
     }
-
+    
+    Scene.prototype.teleportUserToCursor = function () {
+        var curs = this.getObjectByLabel('cursor');
+        this.moveRaftAndPlayerTo(curs.pos);
+    }
     
     Scene.prototype.setupScene = function () {
         var scene = this;
@@ -99,13 +104,33 @@ window.ExperimentalScene = (function () {
         
         console.log('setting up');
         
+        /* Cursor */
+        var cursor = new FCShapes.SimpleCuboid(
+            _hidden_beneath_floor,
+            {w: 0.3, h:0.3, d:0.3},
+            null,
+            {label: 'cursor', shaderLabel: 'diffuse', textureLabel: 'red'}
+        );
+        cursor.behaviours.push(function (drawable, timePoint) {
+            drawable.currentOrientation = {x:0.0, y:Math.PI*2*(timePoint/7000), z:0.0};
+        });
+        scene.addObject(cursor);
+        
         /* Floor */
-        scene.addObject(new FCShapes.WallShape(
+        var floor = new FCShapes.WallShape(
             {x: 0, z: 0, y: -0.02},
             {minX: -20, maxX: 20, minY: -20, maxY: 20},
             {x:270/DEG, y:0/DEG, z:0/DEG},
             {label: 'floor', textureLabel: 'concrete01', shaderLabel: 'diffuse', segmentsX: 10, segmentsY: 10}
-        ));
+        );
+        var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
+        floorCollider.callback = function (dat) {
+            var c = scene.getObjectByLabel('cursor');
+            c.pos.x = dat.collisionPoint[0];
+            c.pos.y = dat.collisionPoint[1];
+            c.pos.z = dat.collisionPoint[2];
+        }
+        scene.addObject(floor);
         
         /* Raft */
         var stageExtent = {
@@ -133,6 +158,9 @@ window.ExperimentalScene = (function () {
                 if (btnIdx == 0) {
                     console.log('Sector', sector);
                 }
+                if (btnIdx == '2' && btnStatus == 'pressed') {
+                    scene.teleportUserToCursor();
+                }
             }
         };
         
@@ -148,6 +176,7 @@ window.ExperimentalScene = (function () {
             }
         );
         ctrl0.behaviours.push(FCUtil.makeGamepadTracker(scene, 0, buttonHandler));
+        ctrl0.behaviours.push(FCUtil.makeControllerRayProjector(scene, 0, [floorCollider]));
         scene.addObject(ctrl0);
         
         var ctrl1 = new FCShapes.MeshShape(
