@@ -111,6 +111,7 @@ window.ExperimentalScene = (function () {
             null,
             {label: 'cursor', shaderLabel: 'diffuse', textureLabel: 'red'}
         );
+        /* Make the cursor revolve slowly */
         cursor.behaviours.push(function (drawable, timePoint) {
             drawable.currentOrientation = {x:0.0, y:Math.PI*2*(timePoint/7000), z:0.0};
         });
@@ -123,6 +124,13 @@ window.ExperimentalScene = (function () {
             {x:270/DEG, y:0/DEG, z:0/DEG},
             {label: 'floor', textureLabel: 'concrete01', shaderLabel: 'diffuse', segmentsX: 10, segmentsY: 10}
         );
+        /* We use the floor collider to determine where the user is pointing their controller, and hence, */
+        /* the location for the cursor. There are two stages to this, first is setting up the collider. */
+        /* Note the planeNormal - this is the normal of the floor *before it is rotated into position*. */
+        /* Basically any planar collider has to match the original state of an object before that object */
+        /* is transformed. */
+        /* This is perhaps counterintuitive and may change. Colliders generally are not as easy to use, yet, */
+        /* as I would like. */
         var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
         floorCollider.callback = function (dat) {
             var c = scene.getObjectByLabel('cursor');
@@ -152,6 +160,9 @@ window.ExperimentalScene = (function () {
             blueColor: scene.addTextureFromColor({r:0.2, g:0.6, b:0.9})
         };
         
+        /* Button handler for the controllers. The default button handler does 2 things: */
+        /* 1). teleport to cursor location when grip button is pressed */
+        /* 2). Output button status info when any button is pressed */
         var buttonHandler = function (gamepadIdx, btnIdx, btnStatus, sector, myButton, extra) {
             if (btnStatus != 'up') {
                 console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus);
@@ -164,6 +175,13 @@ window.ExperimentalScene = (function () {
             }
         };
         
+        /* Controller models are added just like any model in the scene; to make them track the controller, */
+        /* a special behaviour is added. */
+        /* Controller 0 (the green one) also has command of the cursor (having the cursor track both controllers */
+        /* can get pretty weird pretty quickly). */
+        /* This is the 2nd stage of the 2-stage process mentioned earlier. The cursor projects a ray which is */
+        /* configured to interact with a set of colliders, in this case the floorCollider, which has a callback */
+        /* which receives info on the collisions that occur so that the cursor can be updated. */
         var ctrl0 = new FCShapes.MeshShape(
             scene.meshes.controller,
             _hidden_beneath_floor, /* Hide it under the floor. This position will be overridden */
