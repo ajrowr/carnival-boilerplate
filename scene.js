@@ -30,17 +30,18 @@ window.ExperimentalScene = (function () {
         
         var scene = this; /* << Not compulsory but a good habit to have. */
         
-        /* Declare any class and instance vars unique to this scene, here. */
-        /* This constructor is called before the machinery of the engine is fully initialised, so this is the right place for */
-        /* configuration that doesn't depend on other parts of the system, and declaring instance vars which will be filled in later. */
-
-        /* Prerequisites are items that will be loaded before the scene setup. The ones defined here will */
-        /* be automatically loaded, and scene setup will be forced to wait until they finish loading, so */
-        /* anything fundamental to the initialization of the scene should be considered a prerequisite. */
-        /* However it is not ideal to make the user wait for too long so be wary of using large */
-        /* downloads as prerequisistes. */
-        /* Each of the items in scene.prerequisites will be mapped into scene.<thingtype>.<label> once built. */
-        /* (Except for colors which are actually just simple textures are are mapped into scene.textures.<label>) */
+        /* Declare any class and instance vars unique to this scene, here.
+           This constructor is called before the machinery of the engine is fully initialised, so this is the right place for
+           configuration that doesn't depend on other parts of the system, and declaring instance vars which will be filled in later.
+           
+           Prerequisites are items that will be loaded before the scene setup. The ones defined here will
+           be automatically loaded, and scene setup will be forced to wait until they finish loading, so
+           anything fundamental to the initialization of the scene should be considered a prerequisite.
+           However it is not ideal to make the user wait for too long so be wary of using large
+           downloads as prerequisistes.
+           Each of the items in scene.prerequisites will be mapped into scene.<thingtype>.<label> once built.
+           (Except for colors which are actually just simple textures are are mapped into scene.textures.<label>)
+        */
         scene.prerequisites = {
             shaders: [
                 /* Basic is very simple and doesn't take lighting into account */
@@ -107,12 +108,13 @@ window.ExperimentalScene = (function () {
             ]
         }
         
-        /* A good general pattern for lights is to have a bright white diffuse one overhead of the scene origin */
-        /* (ie. the center of the player's starting stage) and then some dimmer, lower-set diffuse ones to */
-        /* illuminate the back sides of things. It really depends on where in the scene you expect the player to */
-        /* be spending their time. */
-        /* Ambient is not very useful in a low-texture environment as it washes out the polygons of any non-flat */
-        /* surfaces so it's best to save it for flat things like floors and walls. */
+        /* A good general pattern for lights is to have a bright white (or slightly yellow) diffuse one overhead of the scene origin
+           (ie. the center of the player's starting stage) and then some dimmer, lower-set diffuse ones to
+           illuminate the back sides of things. It really depends on where in the scene you expect the player to
+           be spending their time.
+           Ambient is not very useful in a low-texture environment as it washes out the polygons of any non-flat
+           surfaces so it's best to save it for flat things like floors and walls.
+        */
         scene.lightPool = {
             plainWhiteAmbientOverhead: {
                 position: [0.0, 3.0, 1.0, 1.0],
@@ -143,24 +145,25 @@ window.ExperimentalScene = (function () {
             {position: [2, 2, 0, 0], diffuse: [0.0, 0.8, 0.0]},
             {position: [0, 2, 0, 0], diffuse: [0.8, 0.0, 0.0]},
         ];
-        /* If you ever want to change the lighting of the scene while it's rendering, */
-        /* call scene.updateLighting() after changing scene.lights - this will */
-        /* re-bind the lights to the shader uniforms. */
-        /* You can also bind specific lights to individual positions in the shader */
-        /* with scene.bindLightToShaderPosition(lightDef, shader, lightIdx). */
-        /* To bind a set of lights at once use scene.bindLightsToShader([lightDef, ...], shader). This */
-        /* replaces all current lights. */
-        /* To switch lights off you can provide a value of null to these methods. */
-        /* Note that lights don't need to be in the lightPool to use them - it's */
-        /* just for convenience. You can have lights be just as dynamic as you'd like, */
-        /* as long as the shader uniforms are kept up to date. */
-        
-        /* Keep in mind that only certain shaders support lights and materials, none of this */ 
-        /* will have any effect on the diffuse or basic shaders for instance. */
-        
-        /* Occasionally we want things to track the motion of the controllers. */
-        /* To make this simple, we'll pre-configure behaviour functions to handle this, and place them */
-        /* in scene.trackers. */
+        /* If you ever want to change the lighting of the scene while it's rendering,
+           call scene.updateLighting() after changing scene.lights - this will
+           re-bind the lights to the shader uniforms.
+           You can also bind specific lights to individual positions in the shader
+           with scene.bindLightToShaderPosition(lightDef, shader, lightIdx).
+           To bind a set of lights at once use scene.bindLightsToShader([lightDef, ...], shader). This
+           replaces all current lights.
+           To switch lights off you can provide a value of null to these methods.
+           Note that lights don't need to be in the lightPool to use them - it's
+           just for convenience. You can have lights be just as dynamic as you'd like,
+           as long as the shader uniforms are kept up to date.
+           
+           Keep in mind that only certain shaders support lights and materials, none of this 
+           will have any effect on the diffuse or basic shaders for instance.
+           
+           Occasionally we want things to track the motion of the controllers.
+           To make this simple, we'll pre-configure behaviour functions to handle this, and place them
+           in scene.trackers.
+        */
         scene.trackers = {a:null, b:null};
         
         /* Toggle to show or hide the lights for debugging */
@@ -174,10 +177,11 @@ window.ExperimentalScene = (function () {
     Scene.prototype.setupPrereqs = function () {
         return new Promise(function (resolve, reject) {resolve()});
         
-        /* NB: NONE OF THIS WILL BE EXECUTED since this function already returned. */
-        /* setupPrereqs used to be very important but nowadays most things can be loaded */
-        /* automatically by specifying scene.prerequisites in the scene constructor. */
-        /* However since it makes for good examples I've left a few bits and pieces in here. */
+        /* NB: NONE OF THIS WILL BE EXECUTED since this function already returned.
+           setupPrereqs used to be very important but nowadays most things can be loaded
+           automatically by specifying scene.prerequisites in the scene constructor.
+           However since it makes for good examples I've left a few bits and pieces in here.
+        */
         
         var scene = this;
         var prereqPromises = [];
@@ -272,11 +276,11 @@ window.ExperimentalScene = (function () {
     
     Scene.prototype.setupScene = function () {
         var scene = this;
-        var _hidden = function () {return {x:0, y:-100, z:0};}
+        var _hidden = function () {return {x:0, y:-100, z:0};} /* For things that get positioned dynamically eg cursor and controller trackers */
         
-        console.log('setting up');
+        console.log('Setting up scene...');
         
-        /* Cursor */
+        /* Build the cursor */
         var cursor = new FCShapes.SimpleCuboid(
             _hidden(),
             {w: 0.3, h:0.3, d:0.3},
@@ -289,20 +293,21 @@ window.ExperimentalScene = (function () {
         });
         scene.addObject(cursor);
         
-        /* Floor */
+        /* Build the floor */
         var floor = new FCShapes.WallShape(
             {x: 0, z: 0, y: -0.02},
             {minX: -20, maxX: 20, minY: -20, maxY: 20},
             {x:DEG(270), y:0, z:0},
             {label: 'floor', materialLabel:'concrete', segmentsX: 10, segmentsY: 10}
         );
-        /* We use the floor collider to determine where the user is pointing their controller, and hence, */
-        /* the location for the cursor. There are two stages to this, first is setting up the collider. */
-        /* Note the planeNormal - this is the normal of the floor *before it is rotated into position*. */
-        /* Basically any planar collider has to match the original state of an object before that object */
-        /* is transformed. */
-        /* This is perhaps counterintuitive and may change. Colliders generally are not as easy to use, yet, */
-        /* as I would like. */
+        /* We use the floor collider to determine where the user is pointing their controller, and hence,
+           the location for the cursor. There are two stages to this, first is setting up the collider.
+           Note the planeNormal - this is the normal of the floor *before it is rotated into position*.
+           Basically any planar collider has to match the original state of an object before that object
+           is transformed.
+           This is perhaps counterintuitive and may change. Colliders generally are not as easy to use, yet,
+           as I would like.
+        */
         var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
         floorCollider.callback = function (dat) {
             var c = scene.getObjectByLabel('cursor');
@@ -312,7 +317,12 @@ window.ExperimentalScene = (function () {
         }
         scene.addObject(floor);
         
-        /* Raft */
+        /* Build the raft.
+           For room-scale apps, the Raft is the piece of floor that the player stands on, with bounds equal to the 
+           player's pre-defined play area. It's usually worthwhile to show this visually.
+           In the Carnival framework, our standard way of letting the player move further than their floor space is
+           to relocate them and the raft via teleportation.
+        */
         var stageExtent = {
             x: scene.stageParams.sizeX / 2,
             z: scene.stageParams.sizeZ / 2
@@ -327,19 +337,21 @@ window.ExperimentalScene = (function () {
         
         /* === === === Controllers === === === */
         
-        /* Button handler for the controllers. The default button handler does 3 things: */
-        /* 1). Teleport to cursor location when grip button is pressed */
-        /* 2). Toggle showing the lights when menu button is pressed */
-        /* 3). Output button status info when any button is pressed */
-        /* Buttons for Vive controller are - 0: trackpad, 1: trigger 2: grip, 3: menu */
-        /* Statuses are: pressed, released, up, held */
-        /* up means button is not pressed. */
-        /* pressed means the button transitioned from up to down. */
-        /* released means the button transitioned from down to up. */
-        /* held means the button started down and stayed down */
-        /* If the trackpad is involved, sector will be one of n, ne, e, se, s, sw, w, nw, center */
-        /* If you need more precision than that, consider writing a custom handler :) */
-        /* Buttonhandlers are called once per anim frame. */
+        /* Button handler for the controllers. 
+           The default button handler does 3 things:
+           1). Teleport to cursor location when grip button is pressed
+           2). Toggle showing the lights when menu button is pressed
+           3). Output button status info when any button is pressed
+           Buttons for Vive controller are - 0: trackpad, 1: trigger 2: grip, 3: menu
+           Statuses are: pressed, released, up, held
+           up means button is not pressed.
+           pressed means the button transitioned from up to down.
+           released means the button transitioned from down to up.
+           held means the button started down and stayed down
+           If the trackpad is involved, sector will be one of n, ne, e, se, s, sw, w, nw, center
+           If you need more precision than that, consider writing a custom handler :)
+           Buttonhandlers are called once per anim frame. 
+        */
         var buttonHandler = function (gamepadIdx, btnIdx, btnStatus, sector, myButton, extra) {
             if (btnStatus != 'up') {
                 console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus);
@@ -355,30 +367,31 @@ window.ExperimentalScene = (function () {
             }
         };
         
-        /* 
-        A representation of a controller consists of several distinct pieces of visual chrome, and
-        some functions that handle the following tasks:
-            - mapping movement of the real-world controller onto the position and orientation of the models
-            - interpreting presses of buttons
-            - (controller 0) projecting a ray from the controller which "collides" with the floor to determine cursor location
+        /* Building the controllers.
+           A representation of a controller consists of several distinct pieces of visual chrome, and
+           some functions that handle the following tasks:
+               - mapping movement of the real-world controller onto the position and orientation of the models
+               - interpreting presses of buttons
+               - (controller 0) projecting a ray from the controller which "collides" with the floor to determine cursor location
         */
         
         /* Build a pair of simple trackers and add them to the scene for later re-use. */
         scene.trackers.a = FCUtil.makeGamepadTracker(scene, 0, null);
         scene.trackers.b = FCUtil.makeGamepadTracker(scene, 1, null);
                 
-        /* Factory function for controllers */
-        /* primaryBehaviors are specific behaviors that will only be applied to the first item of chrome. */
-        /* basicTracker is a simple tracker that just moves the chrome around. */
-        var buildController = function (chromeMeshes, texLabel, basicTracker, primaryBehaviors) {
+        /* Factory function for controllers
+           primaryBehaviours are specific behaviors that will only be applied to the first item of chrome.
+           basicTracker is a simple tracker that just moves the chrome around.
+        */
+        var buildController = function (chromeMeshes, texLabel, basicTracker, primaryBehaviours) {
             var p = {
                 textureLabel: texLabel, materialLabel: 'matteplastic', groupLabel: 'controllerTrackers'
             };
             for (var i = 0; i < chromeMeshes.length; i++) {
                 var o = new FCShapes.MeshShape(chromeMeshes[i], _hidden(), {scale:1}, null, p);
                 if (i==0) {
-                    for (var j = 0; j < primaryBehaviors.length; j++) {
-                        o.behaviours.push(primaryBehaviors[j]);
+                    for (var j = 0; j < primaryBehaviours.length; j++) {
+                        o.behaviours.push(primaryBehaviours[j]);
                     }
                 }
                 else {
@@ -388,28 +401,25 @@ window.ExperimentalScene = (function () {
             }
         }
         
+        /* Get the bits and pieces ready for building the controllers */
         var chromeMeshes = (function (L) {var out=[]; for (var i=0; i<L.length; i++) {out.push(scene.meshes['controller_'+L[i]]);} return out;})
-            (['body', 'button_menu', 'button_sys', 'trigger', 'trackpad', 'grip_l', 'grip_r']);
-        
-        /* */
+            (['body', 'button_menu', 'button_sys', 'trigger', 'trackpad', 'grip_l', 'grip_r']);        
         var c0ButtonHandlingTracker = FCUtil.makeGamepadTracker(scene, 0, buttonHandler);
         var c0Projector = FCUtil.makeControllerRayProjector(scene, 0, [floorCollider]);
-        var c1ButtonHandlingTracker = FCUtil.makeGamepadTracker(scene, 1, buttonHandler);        
+        var c1ButtonHandlingTracker = FCUtil.makeGamepadTracker(scene, 1, buttonHandler);
         
         buildController(chromeMeshes, 'seagreen', scene.trackers.a, [c0ButtonHandlingTracker, c0Projector]);
-        buildController(chromeMeshes, 'royalblue', scene.trackers.b, [c1ButtonHandlingTracker]);        
-        
+        buildController(chromeMeshes, 'royalblue', scene.trackers.b, [c1ButtonHandlingTracker]);
         
         /* === === === Putting some things in the scene === === === */
-        /* 
-        Let's add some text to the scene by loading meshes representing letters and other typographical characters (aka glyphs) 
-        and then creating drawable objects from those meshes, then adding the drawables to the scene.
+        /* Let's add some text to the scene by:
+           - loading meshes representing letters and other typographical characters (aka glyphs) 
+           - then creating drawable objects from those meshes
+           - then adding the drawables to the scene.
         */  
         
-        /* Some example text, made up of glyphs loaded from meshes */
-        var showText = function (textStr, basePos, baseOri, scale, params) {
-            var p = params || {};
-            // var scale = p.scale || 1.0;
+        /* Function for adding example text, made up of glyphs loaded from meshes */
+        var showText = function (textStr, basePos, baseOri, scale) {
             scale = scale || 1.0;
             var rotQuat = quat.create();
             quat.rotateX(rotQuat, rotQuat, baseOri.x);
@@ -440,11 +450,11 @@ window.ExperimentalScene = (function () {
             });
         }
         
-
         showText('#virtualreality', {x:2, y:0.3, z:3}, {x:0, y:DEG(180), z:0});
         showText('/meta4vr', {x:-1.7, y:0.3, z:-3}, {x:0, y:0, z:0});
         
-        /* Add a facebook icon from a glyph mesh. */
+        /* Add a facebook icon from a FontAwesome glyph mesh. */
+        /* The entire FontAwesome v4.6.3 glyphset is on meshbase, to get the hexcodes google "fontawesome cheat sheet" */
         FCShapeUtils.loadMesh('//meshbase.meta4vr.net/_typography/fontawesome/glyph_'+0xf230+'.obj')
         .then(function (mesh) {
             var fbIcon = new FCShapes.MeshShape(mesh, {x:-2.7, y:0.3, z:-3}, {scale:1.0}, null, {materialLabel:'matteplastic'});
