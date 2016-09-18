@@ -28,13 +28,13 @@ window.ExperimentalScene = (function () {
     function Scene() {
         FCScene.call(this); /* << Don't remove this! */
         
-        var scene = this; /* << Not compulsory but a good habit to have. */
+        var scene = this; /* << Not compulsory but a good habit to have for scene instance methods. */
         
         /* Declare any class and instance vars unique to this scene, here.
            This constructor is called before the machinery of the engine is fully initialised, so this is the right place for
            configuration that doesn't depend on other parts of the system, and declaring instance vars which will be filled in later.
            
-           Prerequisites are items that will be loaded before the scene setup. The ones defined here will
+           Prerequisites are things that will be loaded and/or built before the scene setup. The ones defined here will
            be automatically loaded, and scene setup will be forced to wait until they finish loading, so
            anything fundamental to the initialization of the scene should be considered a prerequisite.
            However it is not ideal to make the user wait for too long so be wary of using large
@@ -116,24 +116,15 @@ window.ExperimentalScene = (function () {
            surfaces so it's best to save it for flat things like floors and walls.
         */
         scene.lightPool = {
-            plainWhiteAmbientOverhead: {
+            plainWhiteAmbientOverhead: { /* To be honest it's slightly yellow */
                 position: [0.0, 3.0, 1.0, 1.0],
                 ambient: [0.5, 0.5, 0.5],
-                diffuse: [0.8, 0.8, 0.7],
+                diffuse: [0.7, 0.7, 0.6],
                 specular: [0.0, 0.0, 0.0]
             },
-            blueBackfill: {
-                position: [0.0, 3.0, 5.0, 1.0],
-                ambient: [0.0, 0.0, 0.0],
-                diffuse: [0.2, 0.2, 0.8],
-                specular: [0.0, 0.0, 0.0]
-            },
-            dimWhiteBackfill: {
-                position: [0.0, 3.0, -5.0, 1.0],
-                ambient: [0.0, 0.0, 0.0],
-                diffuse: [0.2, 0.2, 0.2],
-                specular: [0.0, 0.0, 0.0]
-            }
+            red: {position: [0, 2, 0, 0], diffuse: [0.8, 0.0, 0.0]},
+            green: {position: [2, 2, 0, 0], diffuse: [0.0, 0.8, 0.0]},
+            blue: {position: [-2, 2, 0, 0], diffuse: [0.0, 0.0, 0.8]}
         }
         /* All specular components in the default lights are switched off due to the aforementioned */
         /* shader issues with specular. */
@@ -141,9 +132,9 @@ window.ExperimentalScene = (function () {
             
         scene.lights = [
             this.lightPool.plainWhiteAmbientOverhead,
-            {position: [-2, 2, 0, 0], diffuse: [0.0, 0.0, 0.8]},
-            {position: [2, 2, 0, 0], diffuse: [0.0, 0.8, 0.0]},
-            {position: [0, 2, 0, 0], diffuse: [0.8, 0.0, 0.0]},
+            this.lightPool.red,
+            this.lightPool.green,
+            this.lightPool.blue
         ];
         /* If you ever want to change the lighting of the scene while it's rendering,
            call scene.updateLighting() after changing scene.lights - this will
@@ -245,6 +236,8 @@ window.ExperimentalScene = (function () {
         
     }
     
+    /* Teleport user and their raft to the location of the cursor. */
+    /* By default this is bound to the grip button on the controller. */
     Scene.prototype.teleportUserToCursor = function () {
         var curs = this.getObjectByLabel('cursor');
         this.moveRaftAndPlayerTo(curs.pos);
@@ -252,6 +245,7 @@ window.ExperimentalScene = (function () {
     
     /* Helpful for debugging lights */
     /* Pass true to switch lights on, false to switch them off, or nothing (undefined) to toggle their state */
+    /* By default this is bound to menu button on the controller. */
     Scene.prototype.showLights = function (state) {
         var lamps = [];
         state = state || (state === undefined && !this.lightsShown);
