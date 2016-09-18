@@ -316,7 +316,7 @@ window.ExperimentalScene = (function () {
                If it's positive, that means the collision occurred *behind* the controller, in other words the controller
                is facing *away* from the floor so we make the cursor invisible.
                When POI is negative that means the controller is facing towards the object of collision.
-               Don't ask my why it's that way round, my grasp of the math involved is tenuous.
+               Don't ask me why it's that way round, my grasp of the math involved is tenuous.
             */
             /* TODO consider clamping the cursor pos to the edges of the floor */
             var c = scene.getObjectByLabel('cursor');
@@ -353,31 +353,43 @@ window.ExperimentalScene = (function () {
         /* === === === Controllers === === === */
         
         /* Button handler for the controllers. 
-           The default button handler does 3 things:
-           1). Teleport to cursor location when grip button is pressed
-           2). Toggle showing the lights when menu button is pressed
-           3). Output button status info when any button is pressed
+           The default button handler does these things:
+           - Grip button: Teleport to cursor location
+           - Menu button: Toggle showing/hiding the lights
+           - Trigger: Dump to console the current location of the controller whose trigger was pressed
+           - Any button: Output button status to console
+        
            Buttons for Vive controller are - 0: trackpad, 1: trigger 2: grip, 3: menu
            Statuses are: pressed, released, up, held
            up means button is not pressed.
            pressed means the button transitioned from up to down.
            released means the button transitioned from down to up.
            held means the button started down and stayed down
+        
            If the trackpad is involved, sector will be one of n, ne, e, se, s, sw, w, nw, center
            If you need more precision than that, consider writing a custom handler :)
            Buttonhandlers are called once per anim frame. 
         */
         var buttonHandler = function (gamepadIdx, btnIdx, btnStatus, sector, myButton, extra) {
             if (btnStatus != 'up') {
-                console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus);
+                /* Print status of buttons */
+                console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus); // << this gets annoying pretty quickly!
+                
+                /* Print trackpad sector info */
                 if (btnIdx == 0) {
                     console.log('Sector', sector);
                 }
-                else if (btnIdx == 3 && btnStatus == 'pressed') {
-                    scene.showLights();
+                /* Dump controller location on trigger */
+                else if (btnIdx == 1 && btnStatus == 'pressed') {
+                    console.log(scene.playerSpatialState.hands[gamepadIdx].pos);
                 }
+                /* Teleport user */
                 else if (btnIdx == 2 && btnStatus == 'pressed') {
                     scene.teleportUserToCursor();
+                }
+                /* Show/hide the scene lights */
+                else if (btnIdx == 3 && btnStatus == 'pressed') {
+                    scene.showLights();
                 }
             }
         };
