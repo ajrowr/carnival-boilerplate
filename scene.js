@@ -310,10 +310,25 @@ window.ExperimentalScene = (function () {
         */
         var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
         floorCollider.callback = function (dat) {
+            // updateReadout('A', dat.POI);
+            // updateReadout('B', dat.collisionPoint);
+            /* POI (aka Point Of Interest) represents the distance along the ray vector that the collision was found.
+               If it's positive, that means the collision occurred *behind* the controller, in other words the controller
+               is facing *away* from the floor so we make the cursor invisible.
+               When POI is negative that means the controller is facing towards the object of collision.
+               Don't ask my why it's that way round, my grasp of the math involved is tenuous.
+            */
+            /* TODO consider clamping the cursor pos to the edges of the floor */
             var c = scene.getObjectByLabel('cursor');
-            c.pos.x = dat.collisionPoint[0];
-            c.pos.y = dat.collisionPoint[1];
-            c.pos.z = dat.collisionPoint[2];
+            if (dat.POI < 0) {
+                c.hidden = false;
+                c.pos.x = dat.collisionPoint[0];
+                c.pos.y = dat.collisionPoint[1];
+                c.pos.z = dat.collisionPoint[2];
+            }
+            else {
+                c.hidden = true;
+            }
         }
         scene.addObject(floor);
         
