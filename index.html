@@ -12,6 +12,7 @@
         
     </head>
     <body>
+        <button id="btn_start_vr" style="position: absolute; top: 1px, left: 1px; float: left; font-size: 200%; font-weight:bold;">START VR</button>
             
         <div id="error-container" style="display: none;">
             <p>Seems like something went wrong.</p>
@@ -45,6 +46,10 @@
             
         };
         
+        document.getElementById('btn_start_vr').addEventListener('click', function () {
+            document.getElementById('btn_start_vr').style.display = 'none';
+            window.START_VR();
+        });
 
         window.updateReadout = function (readoutIdent, newValue) {
             var readoutElem = document.getElementById('readout' + readoutIdent);
