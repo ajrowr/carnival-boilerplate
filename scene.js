@@ -22,14 +22,44 @@ Initialisation procedure for a Scene:
 
 window.ExperimentalScene = (function () {
     "use strict";
+    var $$ = CARNIVAL;
     
-    var DEG = function (deg) {return deg*(Math.PI/180)}; /* Convert degrees to radians, very handy */
+    /* Angles are expressed in radians, so it's worth making it easy to convert them. */
+    var DEG = deg => deg*(Math.PI/180);
+    var RAD = rad => rad; 
     
     function Scene() {
         FCScene.call(this); /* << Don't remove this! */
         
         var scene = this; /* << Not compulsory but a good habit to have for scene instance methods. */
         
+		//components.meta4vr.net/
+		//assets.meta4vr.net/
+        // scene.coreComponentLibrary = new $$.component.ComponentLibrary('//components.meta4vr.net');
+        scene.coreComponents = new $$.component.ComponentLibrary('/_components');
+		scene.myComponents = new $$.component.ComponentLibrary('/_components');
+		let assetPath = (assetType, assetName, extn) => `//assets.meta4vr.net/${assetType}/${assetName}.${extn}`;
+		let coreComponent = (globalName, localName) => ({library: scene.coreComponents, globalName, localName});
+        let shaderAsset = (shaderFile, label) => ({
+            label,
+            srcVertexShader: assetPath('shaders', `${shaderFile}/shader`, 'vs'),
+            srcFragmentShader: assetPath('shaders', `${shaderFile}/shader`, 'fs')
+        });
+        let textureAsset = (textureFile, label) => ({
+            label,
+            src: assetPath('textures', textureFile, 'jpg')
+        });
+        let material = (label, color, textureLabel, shaderLabel, lighting) => ({
+            label,
+            color,
+            textureLabel,
+            shaderLabel,
+            ambient: lighting.ambient,
+            diffuse: lighting.diffuse,
+            specular: lighting.specular
+        });
+		let c3v = v => [v, v, v]; // "consistent 3vec"
+		
         /* Declare any class and instance vars unique to this scene, here.
            This constructor is called before the machinery of the engine is fully initialised, so this is the right place for
            configuration that doesn't depend on other parts of the system, and declaring instance vars which will be filled in later.
@@ -45,68 +75,55 @@ window.ExperimentalScene = (function () {
         scene.prerequisites = {
             shaders: [
                 /* Basic is very simple and doesn't take lighting into account */
-                {label: 'basic', 
-                 srcVertexShader: '//assets.meta4vr.net/shader/basic.vs', 
-                 srcFragmentShader: '//assets.meta4vr.net/shader/basic.fs'},
+				shaderAsset('lightingmodel/basic_v1', 'basic'),
                 
                 /* Diffuse is a fairly straightforward shader; static directional lights = no setup required and nearly */
                 /* impossible to break */
-                {label: 'diffuse', 
-                 srcVertexShader: '//assets.meta4vr.net/shader/diffuse2.vs', 
-                 srcFragmentShader: '//assets.meta4vr.net/shader/diffuse2.fs'},
+				shaderAsset('lightingmodel/diffuse_v1', 'diffuse'),
                 
                 /* ADS is Ambient Diffuse Specular; a fairly flexible & decent quality shader which supports */
                 /* up to 7 positional lights, and materials. Needs to be setup correctly tho otherwise you */
                 /* won't see much of anything. All the materials and lights are configured with ADS in mind. */
                 /* NB. specular doesn't work properly yet (see ads_v1.vs for explanation) so YMMV. */
-                {label: 'ads',
-                 srcVertexShader: '//assets.meta4vr.net/shader/ads_v1.vs', 
-                 srcFragmentShader: '//assets.meta4vr.net/shader/ads_v1.fs'}
+				shaderAsset('lightingmodel/ads_v1', 'ads')
             ],
             meshes: [
-                {label: 'controller_body', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/body.obj'},
-                {label: 'controller_button_menu', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/button.obj'},
-                {label: 'controller_button_sys', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/sys_button.obj'},
-                {label: 'controller_trigger', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/trigger.obj'},
-                {label: 'controller_trackpad', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/trackpad.obj'},
-                {label: 'controller_grip_l', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/l_grip.obj'},
-                {label: 'controller_grip_r', src: '//assets.meta4vr.net/mesh/sys/vive/controller/vr_controller_lowpoly/r_grip.obj'}
             ],
             colors: [
-                {hex: '#00007f', label: 'navy'},
-                {hex: '#0000ff', label: 'blue'},
-                {hex: '#007f00', label: 'green'},
-                {hex: '#007f7f', label: 'teal'},
-                {hex: '#00ff00', label: 'lime'},
-                {hex: '#00ff7f', label: 'springgreen'},
-                {hex: '#00ffff', label: 'cyan'},
-                {hex: '#00ffff', label: 'aqua'},
-                {hex: '#191970', label: 'dodgerblue'},
-                {hex: '#20b2aa', label: 'lightseagreen'},
-                {hex: '#228b22', label: 'forestgreen'},
-                {hex: '#2e8b57', label: 'seagreen'},
-                {hex: '#4169e1', label: 'royalblue'},
-                {hex: '#ff0000', label: 'red'},
-                {hex: '#ff00ff', label: 'magenta'},
-                {hex: '#ffa500', label: 'orange'},
-                {hex: '#ffff00', label: 'yellow'},
-                {hex: '#000000', label: 'black'},
-                {hex: '#888888', label: 'gray'},
-                {hex: '#ffffff', label: 'white'},
-                {r:0.2, g:0.9, b:0.6, label: 'controllerGreen'},
-                {r:0.2, g:0.6, b:0.9, label: 'controllerBlue'}
-                
             ],
             textures: [
-                {label: 'concrete01', src: '//assets.meta4vr.net/texture/concrete01.jpg'}
+				// textureAsset('concrete01', 'surfaces/manmade/concrete01.jpg')
+				textureAsset('surfaces/manmade/concrete01', 'concrete01')
             ],
             materials: [
-                {label: 'concrete', textureLabel: 'concrete01', shaderLabel: 'ads', 
-                    ambient:[1,1,1], diffuse:[0.5,0.5,0.5]},
-                {label: 'matteplastic', textureLabel: 'white', shaderLabel: 'ads', 
-                    ambient:[0,0,0], diffuse:[0.8, 0.8, 0.8]}
-            ]
+				material('concrete', null, 'concrete01', 'ads', {ambient:c3v(1), diffuse:c3v(0.5)}),
+				material('matteplastic', 'white', null, 'ads', {ambient:c3v(0), diffuse:c3v(0.8)})
+            ],
+			
+			/* These components will be pre-loaded and made available for spawning */
+			components: [
+				coreComponent('vrui.sys.controller.vive_lowpoly', 'vivecontroller'),
+				coreComponent('vrui.display.text.glyphtext', 'glyphtext'),
+				coreComponent('vrui.display.mesh.urlmesh', 'urlmesh'),
+				coreComponent('vrui.display.pic.picboard', 'picboard'),
+				coreComponent('vrui.shape.basicshape', 'shape')
+			]
         }
+		
+		
+	        // let scene = this;
+	        // let $cl = scene.coreComponentLibrary;
+	        // return new Promise(function (resolve, reject) {
+	        //     let promises = [
+	        //         $cl.load('net.meta4vr.vrui.sys.controller.vive_lowpoly', 'controller'),
+	        //         $cl.load('net.meta4vr.glyphtext', 'glyphtext'),
+	        //         $cl.load('net.meta4vr.urlmesh', 'urlmesh'),
+	        //         $cl.load('net.meta4vr.picboard', 'picboard'),
+	        //         $cl.load('net.meta4vr.shape', 'shape')
+	        //     ];
+	        //     Promise.all(promises).then(things => resolve());
+	        // })
+		
         
         /* A good general pattern for lights is to have a bright white (or slightly yellow) diffuse one overhead of the scene origin
            (ie. the center of the player's starting stage) and then some dimmer, lower-set diffuse ones to
@@ -163,84 +180,26 @@ window.ExperimentalScene = (function () {
         
     }
     
-    Scene.prototype = Object.create(FCScene.prototype);
+    Scene.prototype = Object.create($$.scene.Scene.prototype);
     
+	/* 	Most prereqs will be automatically loaded by adding them to scene.prerequisites in the constructor, and letting 
+	   	the autoloader handle them.
+		However, you may have some special setup that you want to do before the scene starts rendering, so wrap that in a promise
+		and put it in setupPrereqs.
+		Examples include: loading user configuration, ...
+	*/
     Scene.prototype.setupPrereqs = function () {
         return new Promise(function (resolve, reject) {resolve()});
         
-        /* NB: NONE OF THIS WILL BE EXECUTED since this function already returned.
-           setupPrereqs used to be very important but nowadays most things can be loaded
-           automatically by specifying scene.prerequisites in the scene constructor.
-           However since it makes for good examples I've left a few bits and pieces in here.
-        */
-        
-        var scene = this;
-        var prereqPromises = [];
-        return new Promise(function (resolve, reject) {
-
-            /* Load textures */
-            var textures = [
-                {src: '//assets.meta4vr.net/texture/concrete01.jpg', label: 'concrete01'}
-            ];
-            for (var i=0; i<textures.length; i++) {
-                var myTex = textures[i];
-                prereqPromises.push(scene.addTextureFromImage(myTex.src, myTex.label));
-            }
-            
-            /* Build solid colour textures */
-            var texColors = [
-                {hex: '#000000', label: 'black'},
-                {hex: '#888888', label: 'gray'},
-                {hex: '#ffffff', label: 'white'}
-            ];
-            for (var i=0; i<texColors.length; i++) {
-                var myTexColor = texColors[i];
-                scene.addTextureFromColor(myTexColor, myTexColor.label);
-            }
-                        
-            /* Load meshes */
-            var meshes = [
-                {src: '//assets.meta4vr.net/mesh/obj/sys/vive/controller/ctrl_lowpoly_body.obj', label: 'controller'}
-            ];
-            for (var i=0; i<meshes.length; i++) {
-                var myMesh = meshes[i];
-                prereqPromises.push(new Promise(function (resolve, reject) {
-                    FCShapeUtils.loadObj(myMesh.src)
-                    .then(function (mesh) {
-                        scene.meshes[myMesh.label] = mesh;
-                        resolve();
-                    })
-                }))
-            }
-        
-            /* Load shaders */
-            var shaders = [
-                {srcFs: '//assets.meta4vr.net/shader/basic.fs', srcVs: '//assets.meta4vr.net/shader/basic.vs', label: 'basic'},
-                {srcFs: '//assets.meta4vr.net/shader/diffuse2.fs', srcVs: '//assets.meta4vr.net/shader/diffuse2.vs', label: 'diffuse'}
-            ];
-            for (var i=0; i<shaders.length; i++) {
-                var myShader = shaders[i];
-                prereqPromises.push(scene.addShaderFromUrlPair(myShader.srcVs, myShader.srcFs, myShader.label, {
-                    position: 0,
-                    texCoord: 1,
-                    vertexNormal: 2                
-                }));
-            }
-            
-            /* Wait for everything to finish and resolve() */
-            Promise.all(prereqPromises).then(function () {
-                resolve();
-            });
-            
-        })
-        
     }
     
+	/* Actual useful things the scene can do */
+	
     /* Teleport user and their raft to the location of the cursor. */
     /* By default this is bound to the grip button on the controller. */
     Scene.prototype.teleportUserToCursor = function () {
         var curs = this.getObjectByLabel('cursor');
-        this.moveRaftAndPlayerTo(curs.pos);
+        this.movePlayerTo(curs.drawable.pos);
     }
     
     /* Helpful for debugging lights */
@@ -274,26 +233,358 @@ window.ExperimentalScene = (function () {
         
         console.log('Setting up scene...');
         
-        /* Build the cursor */
-        var cursor = new FCShapes.SimpleCuboid(
-            _hidden(),
-            {w: 0.3, h:0.3, d:0.3},
-            null,
-            {label: 'cursor', materialLabel:'matteplastic', textureLabel: 'red'}
-        );
-        /* Make the cursor revolve slowly */
-        cursor.behaviours.push(function (drawable, timePoint) {
-            drawable.currentOrientation = {x:0.0, y:Math.PI*2*(timePoint/7000), z:0.0};
+        let $xyz = (x, y, z) => ({x:x, y:y, z:z});
+        let $hidden = () => $xyz(0, -10, 0);            /* For when you want to hide something under the floor */
+        let $colorTex = l => $$.colors[l].asTexture();
+        let $addToScene = o => scene.addObject(o);
+		
+		let $clib = scene.coreComponents;
+		
+        let floor = $clib.new('shape')({
+            shape: 'partition',
+            label: 'floor',
+            draw: {
+                position: $xyz(0, -0.02, 0),
+                size: {minX: -20, maxX: 20, minY: -20, maxY: 20},
+                orientation: $xyz(DEG(270), 0, 0),
+                materialLabel: 'concrete',
+                segmentsX: 10,
+                segmentsY: 10
+            }
         });
-        scene.addObject(cursor);
+        floor.prepare().then($addToScene);
+		
+		
+		
+		
+		
+        /* 	Build the Raft. */
+        /* 	For room-scale apps, the Raft is the piece of floor that the player stands on, with bounds equal to the 
+           	player's pre-defined play area. It's usually worthwhile to show this visually.
+			
+           	In the Carnival framework, our standard way of letting the player move further than their floor space is
+           	to relocate them via teleportation (on the Vive, this is assigned by default to the grip button). 
+			The Raft then automatically relocates itself (via an attached behavior) to the player.
+        */
+		
         
-        /* Build the floor */
-        var floor = new FCShapes.WallShape(
-            {x: 0, z: 0, y: -0.02},
-            {minX: -20, maxX: 20, minY: -20, maxY: 20},
-            {x:DEG(270), y:0, z:0},
-            {label: 'floor', materialLabel:'concrete', segmentsX: 10, segmentsY: 10}
-        );
+        /* The stage is a rectangle centered on 0, 0, 0; so it extends as far as 1/2 its size in */
+        /* both positive and negative directions along the x and z axes. */
+        let stageExtent = {
+            x: scene.stageParams.sizeX / 2,
+            z: scene.stageParams.sizeZ / 2
+        };
+        /* Build a behavior function to make the raft follow the player as they teleport */
+        let raftPosUpdateBehavior = (drawable, timePoint) => {
+            let pl = scene.playerLocation;
+            drawable.pos.x = pl.x;
+            drawable.pos.y = pl.y;
+            drawable.pos.z = pl.z;
+        };
+        /* Construct the raft & add it to the scene */
+        let raft = $clib.new('shape')({
+            shape: 'partition',
+            label: 'raft',
+            draw: {
+                position: $xyz(0, 0, 0),
+                orientation: $xyz(DEG(270), 0, 0),
+                size: {minX: -1*stageExtent.x, maxX: stageExtent.x, minY: -1*stageExtent.z, maxY: stageExtent.z},
+                materialLabel: 'concrete',
+                color: 'royalblue',
+                segmentsX: 1,
+                segmentsY: 1
+            },
+            behaviors: [
+                {function: raftPosUpdateBehavior, label: 'followPlayer'}
+            ]
+        });
+        raft.prepare().then($addToScene);
+		
+		
+		
+		
+        /* Build the cursor */
+        let cursor = $clib.new('shape')({
+            shape: 'cuboid',
+            label: 'cursor',
+            draw: {
+                position: $hidden(),
+                size: {width: 0.3, height: 0.3, depth: 0.3},
+                color: 'green'
+            }
+        });
+        /* Add a simple behavior to make the cursor revolve slowly. */
+        /* Behaviors are just functions that accept a drawable object and the current time in milliseconds.
+           Every drawable in the scene has its behaviors called on every frame.
+        */
+        cursor.addBehavior(function (drawable, timePoint) {
+            drawable.currentOrientation = $xyz(0.0, Math.PI*2*(timePoint/7000), 0.0);
+        });
+        cursor.prepare().then($addToScene);
+		
+		
+		
+		
+		
+		
+		
+     /* === === === Controllers === === === */
+     
+     /* We need a few things to work together for the controllers to be useful.
+        - button handlers - functions that are called to check and act on the button state of each controller
+        - trackers - behaviour functions which attach to an object and map its spatial disposition to match
+          that of the motion controller hardware
+        - ray projectors - project a virtual ray from a controller to implement behavior based on pointing
+        - colliders - a means of testing projected rays against objects
+        - chrome - the aspects of a controller that are visualised in the simulation
+     */
+     
+     /* Many of these things are provided by the various components in play, so it's mostly just a
+        matter of configuring them correctly. */
+     
+     /* Button handler for the controllers. 
+        This is basically the top-level arbiter of all behavior that stems from button presses on a
+        controller; so it's pretty important.
+        The button handlers are one of the main things that you'll be customising when you build an app.
+        Note that you can use totally distinct button handlers for different controllers,
+        but if you do then you probably want to make their chrome visually distinctive too.
+        
+        The default button handler does these things:
+        - Grip button: Teleport user and raft to cursor location
+        - Menu button: Toggle showing/hiding the lights
+        - Trigger: Dump to console the current location of the controller whose trigger was pressed
+        - Any button: Output button status to console
+     
+        Buttons for Vive controller are - 0: trackpad, 1: trigger 2: grip, 3: menu
+        Statuses are: pressed, released, up, held
+        up means button is not pressed.
+        pressed means the button transitioned from up to down.
+        released means the button transitioned from down to up.
+        held means the button started down and stayed down
+     
+        If the trackpad is involved, sector will be one of n, ne, e, se, s, sw, w, nw, center
+        If you need more precision than that, consider writing a custom tracker :)
+        Buttonhandlers are called once per anim frame. 
+     */
+     var buttonHandler = function (gamepadIdx, btnIdx, btnStatus, sector, myButton, extra) {
+         if (btnStatus != 'up') {
+             /* Print status of buttons */
+             console.log('Button idx', btnIdx, 'on controller', gamepadIdx, 'was', btnStatus); // << this gets annoying pretty quickly!
+             
+             /* Print trackpad sector info */
+             if (btnIdx == 0) {
+                 console.log('Sector', sector);
+             }
+             /* Dump controller location on trigger */
+             else if (btnIdx == 1 && btnStatus == 'pressed') {
+                 console.log(scene.playerSpatialState.hands[gamepadIdx].pos);
+             }
+             /* Teleport user */
+             else if (btnIdx == 2 && btnStatus == 'pressed') {
+                 scene.teleportUserToCursor();
+             }
+             /* Show/hide the scene lights */
+             else if (btnIdx == 3 && btnStatus == 'pressed') {
+                 scene.showLights();
+             }
+         }
+     };
+     
+     /*
+     pressed
+     up
+     down
+     released
+     clicked
+     doubleclicked
+     held
+     
+     */
+     /* TODO new-style button handler. Simpler API and allows multiple buttons to work together */
+     /* TODO how to detect which platform? navigator.getGamepads() and widow.vrDisplay.displayName */
+     /* NB: if you componentise the different platform controllers, then you don't need to do
+         $ctrl.makeViveButtonHandler because you can do 
+         $ctrl = $cl.componentClass('viveController').makeButtonHandler
+         $ctrl = $cl.componentClass('oculusTouchController').makeButtonHandler
+         .. .makeButtonMap (for simple mappings)
+     */
+     // var buttonHandler = $ctrl.makeViveButtonHandler(function (gamepadIndex, buttons) {
+     //     if (buttons.grip.pressed) {
+     //         scene.teleportUserToCursor();
+     //     }
+     //     else if (buttons.menu.doubleClicked) {
+     //         scene.toggleShowLights();
+     //     }
+     //     else {
+     //
+     //     }
+     // });
+             
+     /* Build a pair of simple trackers and add them to the scene for later re-use. */
+     let $ctrl = $clib.componentClass('vivecontroller');
+     scene.trackers.a = $ctrl.makeTracker(scene, 0, null);
+     scene.trackers.b = $ctrl.makeTracker(scene, 1, null);
+     
+     
+     /* Now let's build and configure the controllers. */
+     /* We will project a virtual ray from the controller and test it against a collider */
+     /* to determine where the player is pointing their controller; ie, the cursor location. */
+     /* We can get the floor component to provide us a suitable collider. */
+     /* The collider fires callbacks when a collision is detected. */
+     let floorCollider = floor.getCollider('planar');
+     
+     /* This callback simply sets the location of the cursor to the point where the ray collided with the floor. */
+     floorCollider.callback = function (dat) {
+         let c = scene.getObjectByLabel('cursor');
+         if (dat.POI < 0) {
+             c.drawable.hidden = false;
+             c.drawable.pos.x = dat.collisionPoint[0];
+             c.drawable.pos.y = dat.collisionPoint[1];
+             c.drawable.pos.z = dat.collisionPoint[2];
+         }
+         else {
+             c.hidden = true;
+         }            
+     };
+             
+     /* Next, we use some class methods of the controller component to build trackers and a ray projector. */
+     /* The ray projector needs to know about all the colliders it is expected to test against. */
+     var c0ButtonHandlingTracker = $ctrl.makeTracker(scene, 0, buttonHandler);
+     var c0RayProjector = $ctrl.makeRayProjector(scene, 0, [floorCollider]);
+     var c1ButtonHandlingTracker = $ctrl.makeTracker(scene, 1, buttonHandler);
+             
+     /* Now, bring these things together and fabricate the controllers. */
+     let controllerCfgs = [
+         {label: 'c0', behaviors: [
+             {function: c0ButtonHandlingTracker, label: 'tracker'},
+             {function: c0RayProjector, label: 'rayProjector'}
+         ], config: {
+             mainTexture: $colorTex('seagreen'), altTexture: $colorTex('white'), gamepadIndex: 0
+         }},
+         {label: 'c1', behaviors: [
+             {function: c1ButtonHandlingTracker, label: 'tracker'}
+         ], config: {
+             mainTexture: $colorTex('royalblue'), altTexture: $colorTex('white'), gamepadIndex: 1
+         }}
+     ];
+     controllerCfgs.forEach(cfg => ($clib.new('vivecontroller')(cfg)).prepare().then($addToScene));
+     
+		
+		
+		
+		
+		
+		
+     /* === === === Putting some things in the scene === === === */
+     /* Let's use components to add text to the scene.
+     */  
+     
+     /* Add some simple text made of 3d glyph meshes */
+     var text1 = $clib.new('glyphtext')({
+         label: 'text1',
+         draw: {
+             position: $xyz(2, 0.3, 3),
+             orientation: $xyz(0, DEG(180), 0),
+             color: 'white'
+         },
+         config: {
+             fontTag: 'lato-bold'
+         },
+         input: {
+             text: '#virtualreality'
+         }
+     });
+     text1.prepare().then($addToScene);
+     
+     /* For this we're going to generate the text, and add a glyph from FontAwesome */
+     let text2 = $clib.new('glyphtext')({
+         label: 'text2',
+         draw: {
+             position: $xyz(-1.7, 0.3, -3),
+             orientation: $xyz(0, 0, 0),
+             color: 'white'
+         },
+         config: {
+             fontTag: 'lato-bold'
+         },
+         input: {
+             text: '/meta4vr'
+         }
+     });
+     
+     /* The entire FontAwesome v4.6.3 glyphset is on meshbase. */
+     /* To get the hexcodes google "fontawesome cheat sheet" */
+     /* TODO this is a bit esoteric because of the lack of a component.. */
+     /* .. problem is that components can't currently contain each other. */
+     $$.mesh.load('//meshbase.meta4vr.net/_typography/fontawesome/glyph_'+0xf230+'.obj')
+     .then(function (mesh) {
+         let pos = $xyz(-0.99, 0.0, 0); // Relative to origin of container
+         let fbBlue = $$.color('#3b5998');
+         let drawCfg = {materialLabel:'matteplastic', texture:fbBlue.asTexture()};
+         var fbIcon = new $$.mesh.Mesh(mesh, pos, {scale:1.0}, null, drawCfg);
+         text2.drawable.addChild(fbIcon);
+     });
+     text2.prepare().then($addToScene);
+     
+     /* TODO this will be an alternative way of building the FB icon as soon as I can add child components */
+     let fbicon = $clib.new('urlmesh')({
+         label: 'fbLogo',
+         draw: {
+             position: $xyz(1, 1, 3),
+             orientation: $xyz(0, 0, 0),
+             color: '#2255ff'
+         },
+         config: {
+             meshURL: '//meshbase.meta4vr.net/_typography/fontawesome/glyph_'+0xf230+'.obj'
+         }
+     });
+     fbicon.prepare().then($addToScene);
+     
+     /* TODO addChild at the component level? */
+     
+     // var box = new $$.components.shape({
+     //     shape: 'cuboid',
+     //     label: 'box',
+     //     draw: {
+     //         position: {x:0, y:1, z:3},
+     //         size: {width: 2, height: 2, depth: 2}
+     //         // TODO default texture is invalid; that's not good :-O
+     //     }
+     // });
+     // box.prepare().then($addToScene);
+     
+     
+     
+		
+		
+}		
+		
+		
+		
+Scene.prototype.setupSceneOrig = function () {		
+		
+		
+		
+        /* Build the cursor */
+        // var cursor = new FCShapes.SimpleCuboid(
+        //     _hidden(),
+        //     {w: 0.3, h:0.3, d:0.3},
+        //     null,
+        //     {label: 'cursor', materialLabel:'matteplastic', textureLabel: 'red'}
+        // );
+        // /* Make the cursor revolve slowly */
+        // cursor.behaviours.push(function (drawable, timePoint) {
+        //     drawable.currentOrientation = {x:0.0, y:Math.PI*2*(timePoint/7000), z:0.0};
+        // });
+        // scene.addObject(cursor);
+        
+        // /* Build the floor */
+        // var floor = new FCShapes.WallShape(
+        //     {x: 0, z: 0, y: -0.02},
+        //     {minX: -20, maxX: 20, minY: -20, maxY: 20},
+        //     {x:DEG(270), y:0, z:0},
+        //     {label: 'floor', materialLabel:'concrete', segmentsX: 10, segmentsY: 10}
+        // );
         /* We use the floor collider to determine where the user is pointing their controller, and hence,
            the location for the cursor. There are two stages to this, first is setting up the collider.
            Note the planeNormal - this is the normal of the floor *before it is rotated into position*.
@@ -302,29 +593,29 @@ window.ExperimentalScene = (function () {
            This is perhaps counterintuitive and may change. Colliders generally are not as easy to use, yet,
            as I would like.
         */
-        var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
-        floorCollider.callback = function (dat) {
-            // updateReadout('A', dat.POI);
-            // updateReadout('B', dat.collisionPoint);
-            /* POI (aka Point Of Interest) represents the distance along the ray vector that the collision was found.
-               If it's positive, that means the collision occurred *behind* the controller, in other words the controller
-               is facing *away* from the floor so we make the cursor invisible.
-               When POI is negative that means the controller is facing towards the object of collision.
-               Don't ask me why it's that way round, my grasp of the math involved is tenuous.
-            */
-            /* TODO consider clamping the cursor pos to the edges of the floor */
-            var c = scene.getObjectByLabel('cursor');
-            if (dat.POI < 0) {
-                c.hidden = false;
-                c.pos.x = dat.collisionPoint[0];
-                c.pos.y = dat.collisionPoint[1];
-                c.pos.z = dat.collisionPoint[2];
-            }
-            else {
-                c.hidden = true;
-            }
-        }
-        scene.addObject(floor);
+        // var floorCollider = new FCUtil.PlanarCollider({planeNormal:[0, 0, -1], pointOnPlane:[0,0,0]}, floor, null);
+        // floorCollider.callback = function (dat) {
+        //     // updateReadout('A', dat.POI);
+        //     // updateReadout('B', dat.collisionPoint);
+        //     /* POI (aka Point Of Interest) represents the distance along the ray vector that the collision was found.
+        //        If it's positive, that means the collision occurred *behind* the controller, in other words the controller
+        //        is facing *away* from the floor so we make the cursor invisible.
+        //        When POI is negative that means the controller is facing towards the object of collision.
+        //        Don't ask me why it's that way round, my grasp of the math involved is tenuous.
+        //     */
+        //     /* TODO consider clamping the cursor pos to the edges of the floor */
+        //     var c = scene.getObjectByLabel('cursor');
+        //     if (dat.POI < 0) {
+        //         c.hidden = false;
+        //         c.pos.x = dat.collisionPoint[0];
+        //         c.pos.y = dat.collisionPoint[1];
+        //         c.pos.z = dat.collisionPoint[2];
+        //     }
+        //     else {
+        //         c.hidden = true;
+        //     }
+        // }
+        // scene.addObject(floor);
         
         /* Build the raft.
            For room-scale apps, the Raft is the piece of floor that the player stands on, with bounds equal to the 
@@ -332,17 +623,17 @@ window.ExperimentalScene = (function () {
            In the Carnival framework, our standard way of letting the player move further than their floor space is
            to relocate them and the raft via teleportation.
         */
-        var stageExtent = {
-            x: scene.stageParams.sizeX / 2,
-            z: scene.stageParams.sizeZ / 2
-        };
-        console.log(scene.stageParams);
-        scene.addObject(new FCShapes.WallShape(
-            {x: 0, z: 0, y: 0},
-            {minX: -1*stageExtent.x, maxX: stageExtent.x, minY: -1*stageExtent.z, maxY: stageExtent.z},
-            {x:DEG(270), y:0, z:0},
-            {label: 'raft', materialLabel: 'concrete', textureLabel: 'royalblue', segmentsX: 1, segmentsY: 1}
-        ));
+        // var stageExtent = {
+        //     x: scene.stageParams.sizeX / 2,
+        //     z: scene.stageParams.sizeZ / 2
+        // };
+        // console.log(scene.stageParams);
+        // scene.addObject(new FCShapes.WallShape(
+        //     {x: 0, z: 0, y: 0},
+        //     {minX: -1*stageExtent.x, maxX: stageExtent.x, minY: -1*stageExtent.z, maxY: stageExtent.z},
+        //     {x:DEG(270), y:0, z:0},
+        //     {label: 'raft', materialLabel: 'concrete', textureLabel: 'royalblue', segmentsX: 1, segmentsY: 1}
+        // ));
         
         /* === === === Controllers === === === */
         

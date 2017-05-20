@@ -1,13 +1,14 @@
 <html>
     <head>
-        <script src="//codebase.meta4vr.net/carnival/thirdparty/wglu-program.js"></script>
-        <script src="//codebase.meta4vr.net/carnival/thirdparty/gl-matrix-min.js"></script>
+        <script src="/carnival/thirdparty/wglu-program.js"></script>
+        <script src="/carnival/thirdparty/gl-matrix-min.js"></script>
         
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_util.js"></script>
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_primitives.js"></script>
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_basicshapes.js"></script>
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_scene.js"></script>
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_feedtools.js"></script>
+        <script src="/carnival/lib/fc_util.js"></script>
+        <script src="/carnival/lib/fc_primitives.js"></script>
+        <script src="/carnival/lib/fc_basicshapes.js"></script>
+        <script src="/carnival/lib/fc_scene.js"></script>
+        <script src="/carnival/lib/fc_feedtools.js"></script>
+        <script src="/carnival/carnival.js"></script>
         <script src="scene.js"></script>
         
     </head>
@@ -48,7 +49,7 @@
         
         document.getElementById('btn_start_vr').addEventListener('click', function () {
             document.getElementById('btn_start_vr').style.display = 'none';
-            window.START_VR();
+            CARNIVAL.initVR();
         });
 
         window.updateReadout = function (readoutIdent, newValue) {
@@ -58,8 +59,12 @@
 
         
         </script>
-        <script src="//codebase.meta4vr.net/carnival/lib/fc_engine.js"></script>
-        <script>window.S = window.vrScene;</script>
+        <script>
+        CARNIVAL.attachTo(document.getElementById('webgl-canvas'));
+        CARNIVAL.addScene(window.vrScene);
+        CARNIVAL.start();
+        window.S = window.vrScene;
+        </script>
         
         
 
